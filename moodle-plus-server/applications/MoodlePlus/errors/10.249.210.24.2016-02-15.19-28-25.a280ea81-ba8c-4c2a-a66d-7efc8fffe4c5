@@ -1,0 +1,381 @@
+(dp1
+S'output'
+p2
+S"<type 'exceptions.AttributeError'> 'NoneType' object has no attribute 'id'"
+p3
+sS'layer'
+p4
+S'C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\controllers/default.py'
+p5
+sS'code'
+p6
+S'# -*- coding: utf-8 -*-\n# this file is released under public domain and you can use without limitations\n\n#########################################################################\n## This is a sample controller\n## - index is the default action of any application\n## - user is required for authentication and authorization\n## - download is for downloading files uploaded in the db (does streaming)\n#########################################################################\n\ndef index():\n    """\n    example action using the internationalization operator T and flash\n    rendered by views/default/index.html or views/generic.html\n\n    if you need a simple wiki simply replace the two lines below with:\n    return auth.wiki()\n    """\n    response.flash = T("Welcome on Moodle+")\n    return dict(noti_count=4)\n\ndef grades():\n    grades = db(db.grades.user_id==auth.user.id).select()\n    courses = []\n    for grade in grades:\n        courses.append(db(db.courses.id==grade.registered_course_id.course_id).select().first())\n    return dict(grades=grades, courses=courses)\n\ndef notifications():\n    noti = db(db.notifications.user_id==auth.user.id).select(orderby=~db.notifications.created_at)\n    db(db.notifications.user_id==auth.user.id).update(is_seen=1)\n    return dict(notifications=noti)\n\n\ndef logged_in():\n    return dict(success=auth.is_logged_in(), user=auth.user)\n\ndef logout():\n    return dict(success=True, loggedout=auth.logout())\n\ndef user():\n    """\n    exposes:\n    http://..../[app]/default/user/login\n    http://..../[app]/default/user/logout\n    http://..../[app]/default/user/register\n    http://..../[app]/default/user/profile\n    http://..../[app]/default/user/retrieve_password\n    http://..../[app]/default/user/change_password\n    http://..../[app]/default/user/manage_users (requires membership in\n    use @auth.requires_login()\n        @auth.requires_membership(\'group name\')\n        @auth.requires_permission(\'read\',\'table name\',record_id)\n    to decorate functions that need access control\n    """\n    return dict(form=auth())\n\n\n@cache.action()\ndef download():\n    """\n    allows downloading of uploaded files\n    http://..../[app]/default/download/[filename]\n    """\n    return response.download(request, db)\n\n\ndef call():\n    """\n    exposes services. for example:\n    http://..../[app]/default/call/jsonrpc\n    decorate with @services.jsonrpc the functions to expose\n    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv\n    """\n    return service()\n\n\n@request.restful()\ndef api():\n    response.view = \'generic.\'+request.extension\n    def GET(*args,**vars):\n        patterns = \'auto\'\n        parser = db.parse_as_rest(patterns,args,vars)\n        if parser.status == 200:\n            return dict(content=parser.response)\n        else:\n            raise HTTP(parser.status,parser.error)\n    def POST(table_name,**vars):\n        return db[table_name].validate_and_insert(**vars)\n    def PUT(table_name,record_id,**vars):\n        return db(db[table_name]._id==record_id).update(**vars)\n    def DELETE(table_name,record_id):\n        return db(db[table_name]._id==record_id).delete()\n    return dict(GET=GET, POST=POST, PUT=PUT, DELETE=DELETE)\n\ndef login():\n    userid = request.vars.userid\n    password = request.vars.password\n    user = auth.login_bare(userid,password)\n    return dict(success=False if not user else True, user=user)\n\ndef populate_db():\n\t## Populate DB Script\n\n\t## clear database\n\tfor table in db.tables():\n\t\ttry:\n\t\t\tdb(db[table].id>0).delete()\n\t\t\tprint "Cleared",table\n\t\texcept Exception, e:\n\t\t\tprint "Couldn\'t clear",table\n\n\t## create 4 students\n\tdb.users.insert(\n\t\tfirst_name="John",\n\t\tlast_name="Doe",\n\t\temail="cs1110200@cse.iitd.ac.in",\n\t\tusername="cs1110200",\n\t\tentry_no="2011CS10200",\n\t\ttype_=0,\n\t\tpassword="john",\n\t)\n\n\tdb.users.insert(\n\t\tfirst_name="Jasmeet",\n\t\tlast_name="Singh",\n\t\temail="cs5110281@cse.iitd.ac.in",\n\t\tusername="cs5110281",\n\t\tentry_no="2011CS50281",\n\t\ttype_=0,\n\t\tpassword="jasmeet",\n\t)\n\n\tdb.users.insert(\n\t\tfirst_name="Abhishek",\n\t\tlast_name="Bansal",\n\t\temail="cs5110271@cse.iitd.ac.in",\n\t\tusername="cs5110271",\n\t\tentry_no="2011CS50271",\n\t\ttype_=0,\n\t\tpassword="abhishek",\n\t)\n\n\n\tdb.users.insert(\n\t\tfirst_name="Shubham",\n\t\tlast_name="Jindal",\n\t\temail="cs5110300@cse.iitd.ac.in",\n\t\tusername="cs5110300",\n\t\tentry_no="2011CS50300",\n\t\ttype_=0,\n\t\tpassword="shubham",\n\t)\n\n\n\t## create 3 professors\n\tdb.users.insert(\n\t\tfirst_name="Vinay",\n\t\tlast_name="Ribeiro",\n\t\temail="vinay@cse.iitd.ac.in",\n\t\tusername="vinay",\n\t\tentry_no="vinay",\n\t\ttype_=1,\n\t\tpassword="vinay",\n\t)\n\n\tdb.users.insert(\n\t\tfirst_name="Suresh",\n\t\tlast_name="Gupta",\n\t\temail="scgupta@cse.moodle.in",\n\t\tusername="scgupta",\n\t\tentry_no="scgupta",\n\t\ttype_=1,\n\t\tpassword="scgupta",\n\t)\n\n\tdb.users.insert(\n\t\tfirst_name="Subodh",\n\t\tlast_name="Kumar",\n\t\temail="subodh@cse.iitd.ac.in",\n\t\tusername="subodh",\n\t\tentry_no="subodh",\n\t\ttype_=1,\n\t\tpassword="subodh",\n\t)\n\n\n\t## create 7 courses\n\tdb.courses.insert(\n\t\tname="Design Practices in Computer Science",\n\t\tcode="cop290",\n\t\tdescription="Design Practices in Computer Science.",\n\t\tcredits=3,\n\t\tl_t_p="0-0-6"\n\t)\n\n\tdb.courses.insert(\n\t\tname="Wireless Networks",\n\t\tcode="csl838",\n\t\tdescription="PHY and MAC layer concepts in wireless networking",\n\t\tcredits=3,\n\t\tl_t_p="2-0-2"\n\t)\n\n\tdb.courses.insert(\n\t\tname="Software Engineering",\n\t\tcode="col740",\n\t\tdescription="Introduction to the concepts of Software Design and Engineering.",\n\t\tcredits=4,\n\t\tl_t_p="3-0-2"\n\t)\n\n\tdb.courses.insert(\n\t\tname="Cloud Computing and Virtualisation",\n\t\tcode="csl732",\n\t\tdescription="Introduction to Cloud Computing and Virtualisation.",\n\t\tcredits=4,\n\t\tl_t_p="3-0-2"\n\t)\n\n\tdb.courses.insert(\n\t\tname="Parallel Programming",\n\t\tcode="col380",\n\t\tdescription="Introduction to concurrent systems and programming style.",\n\t\tcredits=4,\n\t\tl_t_p="3-0-2"\n\t)\n\n\tdb.courses.insert(\n\t\tname="Computer Graphics",\n\t\tcode="csl781",\n\t\tdescription="Computer Graphics.",\n\t\tcredits=4,\n\t\tl_t_p="3-0-2"\n\t)\n\n\n\tdb.courses.insert(\n\t\tname="Advanced Computer Graphics",\n\t\tcode="csl859",\n\t\tdescription="Graduate course on Advanced Computer Graphics",\n\t\tcredits=4,\n\t\tl_t_p="3-0-2"\n\t)\n\n\n\n\n\t## create 7 registered courses\n\tdb.registered_courses.insert(\t\n\t\tcourse_id=1,\n\t\tprofessor=5,\n\t\tyear_=2016,\n\t\tsemester=2,\n\t\tstarting_date=datetime(2016,1,1),\n\t\tending_date=datetime(2016,5,10),\n\t)\n\n\tdb.registered_courses.insert(\n\t\tcourse_id=2,\n\t\tprofessor=5,\n\t\tyear_=2016,\n\t\tsemester=2,\n\t\tstarting_date=datetime(2016,1,1),\n\t\tending_date=datetime(2016,5,10),\n\t)\n\n\tdb.registered_courses.insert(\n\t\tcourse_id=3,\n\t\tprofessor=6,\n\t\tyear_=2016,\n\t\tsemester=2,\n\t\tstarting_date=datetime(2016,1,1),\n\t\tending_date=datetime(2016,5,10),\n\t)\n\n\tdb.registered_courses.insert(\n\t\tcourse_id=4,\n\t\tprofessor=6,\n\t\tyear_=2016,\n\t\tsemester=2,\n\t\tstarting_date=datetime(2016,1,1),\n\t\tending_date=datetime(2016,5,10),\n\t)\n\n\tdb.registered_courses.insert(\n\t\tcourse_id=5,\n\t\tprofessor=7,\n\t\tyear_=2016,\n\t\tsemester=2,\n\t\tstarting_date=datetime(2016,1,1),\n\t\tending_date=datetime(2016,5,10),\n\t)\n\n\tdb.registered_courses.insert(\n\t\tcourse_id=6,\n\t\tprofessor=7,\n\t\tyear_=2016,\n\t\tsemester=2,\n\t\tstarting_date=datetime(2016,1,1),\n\t\tending_date=datetime(2016,5,10),\n\t)\n\n\tdb.registered_courses.insert(\n\t\tcourse_id=7,\n\t\tprofessor=7,\n\t\tyear_=2016,\n\t\tsemester=1,\n\t\tstarting_date=datetime(2014,7,1),\n\t\tending_date=datetime(2014,12,10),\n\t)\n\n\t## register 3 students for 5 courses each out of 7 registered courses\n\tdb.student_registrations.insert(student_id=1,registered_course_id=3)\n\tdb.student_registrations.insert(student_id=1,registered_course_id=2)\n\tdb.student_registrations.insert(student_id=1,registered_course_id=1)\n\tdb.student_registrations.insert(student_id=1,registered_course_id=4)\n\tdb.student_registrations.insert(student_id=1,registered_course_id=5)\n\tdb.student_registrations.insert(student_id=2,registered_course_id=3)\n\tdb.student_registrations.insert(student_id=2,registered_course_id=4)\n\tdb.student_registrations.insert(student_id=2,registered_course_id=6)\n\tdb.student_registrations.insert(student_id=2,registered_course_id=7)\n\tdb.student_registrations.insert(student_id=2,registered_course_id=1)\n\tdb.student_registrations.insert(student_id=3,registered_course_id=3)\n\tdb.student_registrations.insert(student_id=3,registered_course_id=1)\n\tdb.student_registrations.insert(student_id=3,registered_course_id=5)\n\tdb.student_registrations.insert(student_id=3,registered_course_id=6)\n\tdb.student_registrations.insert(student_id=3,registered_course_id=2)\n\tdb.student_registrations.insert(student_id=4,registered_course_id=3)\n\tdb.student_registrations.insert(student_id=4,registered_course_id=4)\n\tdb.student_registrations.insert(student_id=4,registered_course_id=5)\n\tdb.student_registrations.insert(student_id=4,registered_course_id=7)\n\tdb.student_registrations.insert(student_id=4,registered_course_id=1)\n\n\t## create 3 assignments in Design Practices course\n\tdb.events.insert(\n\t\tregistered_course_id=1,\n\t\ttype_=0,\n\t\tname="Project Submission 1: Draft Requirement Document",\n\t\tdescription="<p><br></p><p>Organise 2 hr meeting of the team to</p><p>-Choose one of the Projects discussed in the class</p><p>-Discuss the specification of the selected project. Identify the aspects to be explored by team members&nbsp;</p><p>-Document the discussion and the initial specs of the project</p><p><br></p><p>Organise 2nd 2 hr meeting &nbsp;to</p><p>-Share the homework done by each team member</p><p>-Discuss and finalise the specs of the projects</p><p>-Prepare 1 or 2 page document on the draft project specification&nbsp;</p><p><br></p><p>Submit the draft Project Requirement Document by Wednesday mid night.</p><p>Add title of the project in the group excel sheet</p>",\n\t\tcreated_at=datetime.now(),\n\t\tdeadline=datetime.now()-timedelta(days=-7),\n\t\tlate_days_allowed=0\n\t)\n\n\tdb.events.insert(\n\t\tregistered_course_id=1,\n\t\ttype_=0,\n\t\tname="Project Submission 2: Requirement Document in IEEE template format",\n\t\tdescription="<p>Submission Deadline 20 Feb Midnight.</p><p id=\'yui_3_17_2_3_1431040674495_308\'>Recommended Process</p><p>-Meeting1 &nbsp;</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Compete listing &nbsp;of User requirements</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Create System Architecture</p><p id=\'yui_3_17_2_3_1431040674495_309\'>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Identify Use cases, Users, draw Use Case Diagram<br></p><p>-Meeting2</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Translate user requirement into system requirements</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Discuss and document Use cases including relevant Models</p><p>-Meeting3&nbsp;</p><p>&nbsp; &nbsp; &nbsp; &nbsp; Discuss each section of the IEEE template&nbsp;</p><p>&nbsp; &nbsp; &nbsp; &nbsp; Create Document as per IEEE template</p><p><br></p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</p><p>&nbsp;</p><p><br></p>",\n\t\tcreated_at=datetime.now(),\n\t\tdeadline=datetime.now()-timedelta(days=-7),\n\t\tlate_days_allowed=2\n\t)\n\n\tdb.events.insert(\n\t\tregistered_course_id=1,\n\t\ttype_=0,\n\t\tname="Project Submission 3 : Detailed Design Document",\n\t\tdescription="<p>Based on the Requirement Document, a detailed design document</p><p>will be created by each group.</p><p>It should have the following components</p><p>-Project Overview</p><p>-Architectural design with well identified Modules</p><p>-Modules specification &amp; its APIs</p><p>-Database Design</p><p>-User Interface Design</p><p>-Module internal data structures and processing if needed.</p><p>-Aprorpriate Diagrams as necessary</p><p>-Any other information as necessary</p><p>Design document should be complete from all aspects ( i.e Requirement &amp; design document should be adequate for any other programming team to develop the system without may further input)</p><p>You may use any apropriate format for this design document</p><p>Submission date 29th March.</p><p><br></p><p><br></p>",\n\t\tcreated_at=datetime.now(),\n\t\tdeadline=datetime.now()-timedelta(days=-7),\n\t\tlate_days_allowed=3\n\t)\n\n\t## Grades\n\tdb.grades.insert(user_id=1, registered_course_id=1, name="Assignment 1", score=15, out_of=15, weightage=10)\n\tdb.grades.insert(user_id=1, registered_course_id=1, name="Assignment 2", score=10, out_of=20, weightage=15)\n\tdb.grades.insert(user_id=1, registered_course_id=1, name="Minor 1", score=25, out_of=30, weightage=25)\n\n\tdb.grades.insert(user_id=2, registered_course_id=1, name="Assignment 1", score=15, out_of=15, weightage=10)\n\tdb.grades.insert(user_id=2, registered_course_id=1, name="Assignment 2", score=18, out_of=20, weightage=15)\n\tdb.grades.insert(user_id=2, registered_course_id=1, name="Minor 1", score=20, out_of=30, weightage=25)\n\n\tdb.grades.insert(user_id=3, registered_course_id=1, name="Assignment 1", score=15, out_of=15, weightage=10)\n\tdb.grades.insert(user_id=3, registered_course_id=1, name="Assignment 2", score=14, out_of=20, weightage=15)\n\tdb.grades.insert(user_id=3, registered_course_id=1, name="Minor 1", score=23, out_of=30, weightage=25)\n\n\tdb.grades.insert(user_id=4, registered_course_id=1, name="Assignment 1", score=15, out_of=15, weightage=10)\n\tdb.grades.insert(user_id=4, registered_course_id=1, name="Assignment 2", score=20, out_of=20, weightage=15)\n\tdb.grades.insert(user_id=4, registered_course_id=1, name="Minor 1", score=15, out_of=30, weightage=25)\n\n\t## create 4 threads in Different courses\n\n\n\t## Create Static Variables\n\tdb.static_vars.insert(\n\t\tname="current_year",\n\t\tint_value=2016,\n\t\tstring_value="2016"\n\t)\n\n\tdb.static_vars.insert(\n\t\tname="current_sem",\n\t\tint_value=2,\n\t\tstring_value="2"\n\t)\ndef api():\n    return """\nMoodle Plus API (ver 1.0)\n-------------------------\n\nUrl: /default/login.json\nInput params:\n    userid: (string)\n    password: (string)\nOutput params:\n    success: (boolean) True if login success and False otherwise\n    user: (json) User details if login is successful otherwise False\n\n\nUrl: /default/logout.json\nInput params:\nOutput params:\n    success: (boolean) True if logout successful and False otherwise\n\n\nUrl: /courses/list.json\nInput params:\nOutput params:\n    current_year: (int)\n    current_sem: (int) 0 for summer, 1 break, 2 winter\n    courses: (List) list of courses\n    user: (dictionary) user details\n\nUrl: /threads/new.json\nInput params:\n    title: (string) can\'t be empty\n    description: (string) can\'t be empty\n    course_code: (string) must be a registered courses\nOutput params:\n    success: (bool) True or False depending on whether thread was posted\n    thread_id: (bool) id of new thread created\n\n    """\n\nresponse._vars=response._caller(notifications)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+S'exception'
+p10
+(dp11
+S'__hash__'
+p12
+S"<method-wrapper '__hash__' of exceptions.AttributeError object>"
+p13
+sS'__setattr__'
+p14
+S"<method-wrapper '__setattr__' of exceptions.AttributeError object>"
+p15
+sS'__reduce_ex__'
+p16
+S'<built-in method __reduce_ex__ of exceptions.AttributeError object>'
+p17
+sS'__getslice__'
+p18
+S"<method-wrapper '__getslice__' of exceptions.AttributeError object>"
+p19
+sS'__getitem__'
+p20
+S"<method-wrapper '__getitem__' of exceptions.AttributeError object>"
+p21
+sS'__setstate__'
+p22
+S'<built-in method __setstate__ of exceptions.AttributeError object>'
+p23
+sS'__reduce__'
+p24
+S'<built-in method __reduce__ of exceptions.AttributeError object>'
+p25
+sS'__str__'
+p26
+S"<method-wrapper '__str__' of exceptions.AttributeError object>"
+p27
+sS'__format__'
+p28
+S'<built-in method __format__ of exceptions.AttributeError object>'
+p29
+sS'__getattribute__'
+p30
+S"<method-wrapper '__getattribute__' of exceptions.AttributeError object>"
+p31
+sS'__class__'
+p32
+S"<type 'exceptions.AttributeError'>"
+p33
+sS'__unicode__'
+p34
+S'<built-in method __unicode__ of exceptions.AttributeError object>'
+p35
+sS'__delattr__'
+p36
+S"<method-wrapper '__delattr__' of exceptions.AttributeError object>"
+p37
+sS'__subclasshook__'
+p38
+S'<built-in method __subclasshook__ of type object>'
+p39
+sS'__repr__'
+p40
+S"<method-wrapper '__repr__' of exceptions.AttributeError object>"
+p41
+sS'args'
+p42
+S'("\'NoneType\' object has no attribute \'id\'",)'
+p43
+sS'__dict__'
+p44
+S'{}'
+p45
+sS'__sizeof__'
+p46
+S'<built-in method __sizeof__ of exceptions.AttributeError object>'
+p47
+sS'__doc__'
+p48
+S"'Attribute not found.'"
+p49
+sS'__init__'
+p50
+S"<method-wrapper '__init__' of exceptions.AttributeError object>"
+p51
+sS'__new__'
+p52
+S'<built-in method __new__ of type object>'
+p53
+ssS'evalue'
+p54
+S"'NoneType' object has no attribute 'id'"
+p55
+sS'request'
+p56
+cgluon.html
+XML_unpickle
+p57
+(S's}M\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">ajax</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">application</td><td style="vertical-align:top;">:</td><td><div>MoodlePlus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cid</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">client</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">controller</td><td style="vertical-align:top;">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">env</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">CONTENT_LENGTH</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">CONTENT_TYPE</td><td style="vertical-align:top;">:</td><td><div>application/x-www-form-urlencoded</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT_ENCODING</td><td style="vertical-align:top;">:</td><td><div>gzip</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONNECTION</td><td style="vertical-align:top;">:</td><td><div>Keep-Alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONTENT_LENGTH</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONTENT_TYPE</td><td style="vertical-align:top;">:</td><td><div>application/x-www-form-urlencoded</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_HOST</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_USER_AGENT</td><td style="vertical-align:top;">:</td><td><div>Dalvik/2.1.0 (Linux; U; Android 5.1; genymotion_vbox86p_5.1_150409_102009 Build/LMY47D)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">PATH_INFO</td><td style="vertical-align:top;">:</td><td><div>/default/notifications.json</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">QUERY_STRING</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_ADDR</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_PORT</td><td style="vertical-align:top;">:</td><td><div>55094</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REQUEST_METHOD</td><td style="vertical-align:top;">:</td><td><div>POST</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SCRIPT_NAME</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_NAME</td><td style="vertical-align:top;">:</td><td><div>hp</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PORT</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PROTOCOL</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_SOFTWARE</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;C:\\\\Users\\\\008\\\\moodle-plus\\\\applications\\\\MoodlePlus\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\008\\moodle-plus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x23cca58: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [&#x27;fe80::601b:d8a8:e92a:ed07%8&#x27;, &#x27;10.249.210.24&#x27;, &#x27;fe80::188e:1f05:f506:2de7%4&#x27;, &#x27;2001:0:5ef5:79fb:188e:1f05:f506:2de7&#x27;, &#x27;fe80::8838:5d6c:d1d7:36c5%3&#x27;, &#x27;192.168.56.1&#x27;], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;scheduler_groups&#x27;: None, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;hp&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;C:\\\\Users\\\\008\\\\moodle-plus&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;&lt;ask&gt;&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">content_length</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">content_type</td><td style="vertical-align:top;">:</td><td><div>application/x-www-form-urlencoded</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\008\\moodle-plus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept_encoding</td><td style="vertical-align:top;">:</td><td><div>gzip</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_connection</td><td style="vertical-align:top;">:</td><td><div>Keep-Alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_content_length</td><td style="vertical-align:top;">:</td><td><div>0</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_content_type</td><td style="vertical-align:top;">:</td><td><div>application/x-www-form-urlencoded</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_host</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_user_agent</td><td style="vertical-align:top;">:</td><td><div>Dalvik/2.1.0 (Linux; U; Android 5.1; genymotion_vbox86p_5.1_150409_102009 Build/LMY47D)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>fe80::601b:d8a8:e92a:ed07%8</div></td></tr><tr><td><div>hp</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>fe80::188e:1f05:f506:2de7%4</div></td></tr><tr><td><div>2001:0:5ef5:79fb:188e:1f05:f506:2de7</div></td></tr><tr><td><div>fe80::8838:5d6c:d1d7:36c5%3</div></td></tr><tr><td><div>10.249.210.24</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>192.168.56.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path_info</td><td style="vertical-align:top;">:</td><td><div>/default/notifications.json</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">query_string</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_addr</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_port</td><td style="vertical-align:top;">:</td><td><div>55094</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_method</td><td style="vertical-align:top;">:</td><td><div>POST</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_uri</td><td style="vertical-align:top;">:</td><td><div>/MoodlePlus/default/notifications.json</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">script_name</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_name</td><td style="vertical-align:top;">:</td><td><div>hp</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_port</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_protocol</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_software</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_original_uri</td><td style="vertical-align:top;">:</td><td><div>/default/notifications.json</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_path</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\008\\moodle-plus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.10.3-stable+timestamp.2015.04.02.21.42.07</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x0207D0D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x02D05110&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x07AB8830&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x0207D0D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x02D05110&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x07AB8830&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">extension</td><td style="vertical-align:top;">:</td><td><div>json</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">folder</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">function</td><td style="vertical-align:top;">:</td><td><div>notifications</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">global_settings</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;C:\\\\Users\\\\008\\\\moodle-plus\\\\applications\\\\MoodlePlus\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\008\\moodle-plus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x23cca58: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [&#x27;fe80::601b:d8a8:e92a:ed07%8&#x27;, &#x27;10.249.210.24&#x27;, &#x27;fe80::188e:1f05:f506:2de7%4&#x27;, &#x27;2001:0:5ef5:79fb:188e:1f05:f506:2de7&#x27;, &#x27;fe80::8838:5d6c:d1d7:36c5%3&#x27;, &#x27;192.168.56.1&#x27;], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;scheduler_groups&#x27;: None, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;hp&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;C:\\\\Users\\\\008\\\\moodle-plus&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;&lt;ask&gt;&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\008\\moodle-plus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>fe80::601b:d8a8:e92a:ed07%8</div></td></tr><tr><td><div>hp</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>fe80::188e:1f05:f506:2de7%4</div></td></tr><tr><td><div>2001:0:5ef5:79fb:188e:1f05:f506:2de7</div></td></tr><tr><td><div>fe80::8838:5d6c:d1d7:36c5%3</div></td></tr><tr><td><div>10.249.210.24</div></td></tr><tr><td><div>127.0.0.1</div></td></tr><tr><td><div>192.168.56.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.10.3-stable+timestamp.2015.04.02.21.42.07</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_https</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_local</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_restful</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_sheduler</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_shell</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">now</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 2, 15, 19, 28, 25, 920000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">url</td><td style="vertical-align:top;">:</td><td><div>/default/notifications.json</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">utcnow</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 2, 15, 13, 58, 25, 920000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">uuid</td><td style="vertical-align:top;">:</td><td><div>MoodlePlus/10.249.210.24.2016-02-15.19-28-25.a280ea81-ba8c-4c2a-a66d-7efc8fffe4c5</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi</td><td style="vertical-align:top;">:</td><td><div>&lt;gluon.main.LazyWSGI object at 0x07876F70&gt;</div></td></tr></table></div>'
+tRp58
+sS'frames'
+p59
+(lp60
+(dp61
+S'file'
+p62
+S'C:\\Users\\008\\moodle-plus\\gluon\\restricted.py'
+p63
+sS'dump'
+p64
+(dp65
+S'environment'
+p66
+S"{'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}"
+p67
+sS'ccode'
+p68
+S'<code object <module> at 07E764E8, file "C:\\User...ions\\MoodlePlus\\controllers/default.py", line 11>'
+p69
+ssS'lnum'
+p70
+I227
+sS'lines'
+p71
+(dp72
+I224
+S'            ccode = code'
+p73
+sI225
+S'        else:'
+p74
+sI226
+S'            ccode = compile2(code, layer)'
+p75
+sI227
+S'        exec ccode in environment'
+p76
+sI228
+S'    except HTTP:'
+p77
+sI229
+S'        raise'
+p78
+sI230
+S'    except RestrictedError:'
+p79
+sI231
+S'        # do not encapsulate (obfuscate) the original RestrictedError'
+p80
+sI222
+S'    try:'
+p81
+sI223
+S'        if isinstance(code, types.CodeType):'
+p82
+ssS'call'
+p83
+S"(code='# -*- coding: utf-8 -*-\\n# this file is released ...\\n\\nresponse._vars=response._caller(notifications)\\n', environment={'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}, layer=r'C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\controllers/default.py')"
+p84
+sS'func'
+p85
+S'restricted'
+p86
+sa(dp87
+g62
+S'C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\controllers\\default.py'
+p88
+sg64
+(dp89
+sg70
+I437
+sg71
+(dp90
+I426
+S'Url: /threads/new.json'
+p91
+sI427
+S'Input params:'
+p92
+sI428
+S"    title: (string) can't be empty"
+p93
+sI429
+S"    description: (string) can't be empty"
+p94
+sI430
+S'    course_code: (string) must be a registered courses'
+p95
+sI431
+S'Output params:'
+p96
+sI432
+S'    success: (bool) True or False depending on whether thread was posted'
+p97
+sI433
+S'    thread_id: (bool) id of new thread created'
+p98
+sI434
+S''
+sI435
+S'    """'
+p99
+ssg83
+S'()'
+p100
+sg85
+S'<module>'
+p101
+sa(dp102
+g62
+S'C:\\Users\\008\\moodle-plus\\gluon\\globals.py'
+p103
+sg64
+(dp104
+S'self'
+p105
+S'undefined'
+p106
+sS'f'
+S'<function notifications>'
+p107
+ssg70
+I393
+sg71
+(dp108
+I388
+S"        self.flash = ''            # used by the default view layout"
+p109
+sI389
+S'        self.meta = Storage()      # used by web2py_ajax.html'
+p110
+sI390
+S'        self.menu = []             # used by the default view layout'
+p111
+sI391
+S'        self.files = []            # used by web2py_ajax.html'
+p112
+sI392
+S'        self._vars = None'
+p113
+sI393
+S'        self._caller = lambda f: f()'
+p114
+sI394
+S'        self._view_environment = None'
+p115
+sI395
+S'        self._custom_commit = None'
+p116
+sI396
+S'        self._custom_rollback = None'
+p117
+sI397
+S"        self.generic_patterns = ['*']"
+p118
+ssg83
+S'(f=<function notifications>)'
+p119
+sg85
+S'<lambda>'
+p120
+sa(dp121
+g62
+S'C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\controllers\\default.py'
+p122
+sg64
+(dp123
+S'db.notifications'
+p124
+S'<Table notifications (id,user_id,description,is_seen,created_at)>'
+p125
+sS'db.notifications.user_id'
+p126
+S'<pydal.objects.Field object>'
+p127
+sS'auth.user.id'
+p128
+g106
+sS'auth.user'
+p129
+S'None'
+p130
+sS'db.notifications.created_at'
+p131
+S'<pydal.objects.Field object>'
+p132
+sS'global auth'
+p133
+S'<gluon.tools.Auth object>'
+p134
+sS'orderby'
+p135
+g106
+sS'global db'
+p136
+S'<DAL uri="sqlite://storage.sqlite">'
+p137
+sS'noti'
+p138
+g106
+ssg70
+I30
+sg71
+(dp139
+I32
+S'    return dict(notifications=noti)'
+p140
+sI33
+S''
+sI34
+S''
+sI25
+S'    for grade in grades:'
+p141
+sI26
+S'        courses.append(db(db.courses.id==grade.registered_course_id.course_id).select().first())'
+p142
+sI27
+S'    return dict(grades=grades, courses=courses)'
+p143
+sI28
+S''
+sI29
+S'def notifications():'
+p144
+sI30
+S'    noti = db(db.notifications.user_id==auth.user.id).select(orderby=~db.notifications.created_at)'
+p145
+sI31
+S'    db(db.notifications.user_id==auth.user.id).update(is_seen=1)'
+p146
+ssg83
+S'()'
+p147
+sg85
+S'notifications'
+p148
+sasS'pyver'
+p149
+S'Python 2.7.9: C:\\Users\\008\\moodle-plus\\web2py.exe (prefix: )'
+p150
+sS'session'
+p151
+g57
+(S's\x1a\x00\x00\x00<div><table></table></div>'
+tRp152
+sS'etype'
+p153
+S"<type 'exceptions.AttributeError'>"
+p154
+sS'date'
+p155
+S'Mon Feb 15 19:28:26 2016'
+p156
+sS'response'
+p157
+g57
+(S's_\x1d\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">body</td><td style="vertical-align:top;">:</td><td><div>&lt;cStringIO.StringO object at 0x07876F40&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">session_id_moodleplus</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24-9b5db360-a301-4182-8cb1-0eb0294485bd<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div>/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">delimiters</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>{{</div></td></tr><tr><td><div>}}</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">files</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">flash</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">form_label_separator</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">formstyle</td><td style="vertical-align:top;">:</td><td><div>bootstrap3_inline</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generic_patterns</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>*</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">google_analytics_id</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">headers</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">X-Powered-By</td><td style="vertical-align:top;">:</td><td><div>web2py</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">logo</td><td style="vertical-align:top;">:</td><td><div><a class="navbar-brand" href="/" id="web2py-logo"><b>Moodle&nbsp;<span>Plus</span></b>&trade;&nbsp;</a></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">menu</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div><table><tr><td><div>Home</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/index.json</div></td></tr><tr><td><div><table></table></div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>My Course</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/courses/index.json</div></td></tr><tr><td><div><table></table></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">meta</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">author</td><td style="vertical-align:top;">:</td><td><div>Your Name &lt;you@example.com&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">description</td><td style="vertical-align:top;">:</td><td><div>a cool new app</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generator</td><td style="vertical-align:top;">:</td><td><div>Web2py Web Framework</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">keywords</td><td style="vertical-align:top;">:</td><td><div>web2py, python, framework</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">models_to_run</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>^\\w+\\.py$</div></td></tr><tr><td><div>^default/\\w+\\.py$</div></td></tr><tr><td><div>^default/notifications/\\w+\\.py$</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">postprocessing</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_client</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_compression_level</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_expires</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_key</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_data_name</td><td style="vertical-align:top;">:</td><td><div>session_data_moodleplus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_file</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_filename</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\sessions\\10.249.210.24-9b5db360-a301-4182-8cb1-0eb0294485bd</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_hash</td><td style="vertical-align:top;">:</td><td><div>c0762cbf4baf7f9af97c051e7fcb8083</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id</td><td style="vertical-align:top;">:</td><td><div>10.249.210.24-9b5db360-a301-4182-8cb1-0eb0294485bd</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_name</td><td style="vertical-align:top;">:</td><td><div>session_id_moodleplus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_masterapp</td><td style="vertical-align:top;">:</td><td><div>MoodlePlus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_new</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_storage_type</td><td style="vertical-align:top;">:</td><td><div>file</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">status</td><td style="vertical-align:top;">:</td><td><div>200</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">subtitle</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">title</td><td style="vertical-align:top;">:</td><td><div>Moodleplus</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">view</td><td style="vertical-align:top;">:</td><td><div>default/notifications.json</div></td></tr></table></div>'
+tRp158
+sS'locals'
+p159
+(dp160
+ssS'traceback'
+p161
+S'Traceback (most recent call last):\n  File "C:\\Users\\008\\moodle-plus\\gluon\\restricted.py", line 227, in restricted\n    exec ccode in environment\n  File "C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\controllers/default.py", line 437, in <module>\n  File "C:\\Users\\008\\moodle-plus\\gluon\\globals.py", line 393, in <lambda>\n    self._caller = lambda f: f()\n  File "C:\\Users\\008\\moodle-plus\\applications\\MoodlePlus\\controllers/default.py", line 30, in notifications\n    noti = db(db.notifications.user_id==auth.user.id).select(orderby=~db.notifications.created_at)\nAttributeError: \'NoneType\' object has no attribute \'id\'\n'
+p162
+s.

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_courses"
+            android:icon="@drawable/book_open_variant"
+            android:title="Courses"
+            android:checked="true" />
+        <item android:title="">
+            <menu android:id="@+id/course_menu">
+
+            </menu>
+        </item>
+        <item
+            android:id="@+id/nav_grades"
+            android:icon="@drawable/account_card_details"
+            android:title="Grades" />
+        <item
+            android:id="@+id/nav_notifications"
+            android:icon="@drawable/message_alert"
+            android:title="Notifications" />
+
+    </group>
+
+    <item
+        android:id="@+id/nav_logout"
+        android:icon="@drawable/power_black"
+        android:title="Logout" />
+
+</menu>

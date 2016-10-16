@@ -1,0 +1,229 @@
+timestamp: 2016-02-08T17:38:48.326000
+CREATE TABLE auth_user(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name CHAR(128),
+    last_name CHAR(128),
+    email CHAR(512),
+    password CHAR(512),
+    registration_key CHAR(512),
+    reset_password_key CHAR(512),
+    registration_id CHAR(512)
+);
+success!
+timestamp: 2016-02-08T17:38:48.538000
+CREATE TABLE auth_group(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    role CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2016-02-08T17:38:48.670000
+CREATE TABLE auth_membership(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    group_id INTEGER REFERENCES auth_group (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-02-08T17:38:48.783000
+CREATE TABLE auth_permission(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER REFERENCES auth_group (id) ON DELETE CASCADE,
+    name CHAR(512),
+    table_name CHAR(512),
+    record_id INTEGER
+);
+success!
+timestamp: 2016-02-08T17:38:48.946000
+CREATE TABLE auth_event(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    time_stamp TIMESTAMP,
+    client_ip CHAR(512),
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    origin CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2016-02-08T17:38:49.074000
+CREATE TABLE auth_cas(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE,
+    created_on TIMESTAMP,
+    service CHAR(512),
+    ticket CHAR(512),
+    renew CHAR(1)
+);
+success!
+timestamp: 2016-02-08T17:38:49.203000
+CREATE TABLE users(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name CHAR(128),
+    last_name CHAR(128),
+    email CHAR(128) UNIQUE,
+    username CHAR(100) UNIQUE,
+    entry_no CHAR(100) UNIQUE,
+    type_ INTEGER,
+    password CHAR(512),
+    registration_key CHAR(512),
+    reset_password_key CHAR(512),
+    registration_id CHAR(512)
+);
+success!
+timestamp: 2016-02-08T17:38:49.339000
+CREATE TABLE user_group(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    role CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2016-02-08T17:38:49.435000
+CREATE TABLE user_membership(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    group_id INTEGER REFERENCES user_group (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-02-08T17:38:49.563000
+CREATE TABLE user_permission(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER REFERENCES user_group (id) ON DELETE CASCADE,
+    name CHAR(512),
+    table_name CHAR(512),
+    record_id INTEGER
+);
+success!
+timestamp: 2016-02-08T17:38:49.803000
+CREATE TABLE user_event(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    time_stamp TIMESTAMP,
+    client_ip CHAR(512),
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    origin CHAR(512),
+    description TEXT
+);
+success!
+timestamp: 2016-02-08T17:38:50.067000
+CREATE TABLE static_vars(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name CHAR(512) UNIQUE,
+    int_value INTEGER,
+    string_value CHAR(512)
+);
+success!
+timestamp: 2016-02-08T17:38:50.375000
+CREATE TABLE user_vars(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    name CHAR(512),
+    int_value INTEGER,
+    string_value CHAR(512)
+);
+success!
+timestamp: 2016-02-08T17:38:50.575000
+CREATE TABLE courses(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name CHAR(512),
+    code CHAR(512),
+    description CHAR(512),
+    credits INTEGER,
+    l_t_p CHAR(512)
+);
+success!
+timestamp: 2016-02-08T17:38:50.707000
+CREATE TABLE registered_courses(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id INTEGER REFERENCES courses (id) ON DELETE CASCADE,
+    professor INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    year_ INTEGER,
+    semester INTEGER,
+    starting_date TIMESTAMP,
+    ending_date TIMESTAMP
+);
+success!
+timestamp: 2016-02-08T17:38:50.831000
+CREATE TABLE student_registrations(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    registered_course_id INTEGER REFERENCES registered_courses (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-02-08T17:38:50.975000
+CREATE TABLE ta_registrations(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    registered_course_id INTEGER REFERENCES registered_courses (id) ON DELETE CASCADE
+);
+success!
+timestamp: 2016-02-08T17:38:51.103000
+CREATE TABLE events(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    registered_course_id INTEGER REFERENCES registered_courses (id) ON DELETE CASCADE,
+    type_ INTEGER,
+    name CHAR(512),
+    description CHAR(512),
+    created_at TIMESTAMP,
+    deadline TIMESTAMP,
+    late_days_allowed INTEGER,
+    file_ CHAR(512)
+);
+success!
+timestamp: 2016-02-08T17:38:51.263000
+CREATE TABLE grades(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    registered_course_id INTEGER REFERENCES registered_courses (id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    name CHAR(512),
+    score DOUBLE,
+    out_of DOUBLE,
+    weightage DOUBLE
+);
+success!
+timestamp: 2016-02-08T17:38:51.399000
+CREATE TABLE resources(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    registered_course_id INTEGER REFERENCES registered_courses (id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    is_public INTEGER,
+    name CHAR(512),
+    file_ CHAR(512),
+    created_at TIMESTAMP
+);
+success!
+timestamp: 2016-02-08T17:38:51.519000
+CREATE TABLE submissions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    event_id INTEGER REFERENCES events (id) ON DELETE CASCADE,
+    name CHAR(512),
+    file_ CHAR(512),
+    created_at TIMESTAMP
+);
+success!
+timestamp: 2016-02-08T17:38:51.647000
+CREATE TABLE threads(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    registered_course_id INTEGER REFERENCES registered_courses (id) ON DELETE CASCADE,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    title CHAR(512),
+    description CHAR(512)
+);
+success!
+timestamp: 2016-02-08T17:38:51.799000
+CREATE TABLE notifications(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    description CHAR(512),
+    is_seen INTEGER,
+    created_at TIMESTAMP
+);
+success!
+timestamp: 2016-02-08T17:38:51.935000
+CREATE TABLE comments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id INTEGER REFERENCES threads (id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
+    description CHAR(512),
+    created_at TIMESTAMP
+);
+success!
